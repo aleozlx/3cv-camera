@@ -100,5 +100,7 @@ ENV/
 # mypy
 .mypy_cache/
 
-calib_example.zip
-*.tif
+*.tgz
+checkerboard*/
+radial_distortion/
+

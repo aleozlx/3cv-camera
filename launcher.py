@@ -13,5 +13,4 @@ VOLUMNS = [
 argv = [DOCKER, 'run', '-it', '-e', 'DISPLAY', '--net=host'] + PORTS + VOLUMNS + [IMAGE] + ['python3', 'main.py']
 print(' '.join(map(lambda i: ("'%s'"%i) if ' ' in i else i, argv)))
 
-os.system('[ ! -f calib_example.zip ] && wget http://www.vision.caltech.edu/bouguetj/calib_doc/htmls/calib_example.zip && unzip calib_example.zip')
 os.execvp(DOCKER, argv)

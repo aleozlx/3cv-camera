@@ -2,7 +2,7 @@ import os, sys
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt
-from scipy.optimize import minimize
+from scipy.optimize import minimize, optimize
 
 # input_image = cv2.imread('radial_distortion/rosten_2008_camera-figure-4-b.tiff')
 # input_image = cv2.resize(input_image, (853,640))
@@ -86,7 +86,6 @@ def update_lines():
 
 # ======= Undistortion =======
 def cost(k):
-    print('cost', k)
     error = 0.0
     for line in lines:
         if len(line):
@@ -103,18 +102,27 @@ def cost(k):
             error += np.sum(distances**2)
     return error
 
+# def undistort(k):
+#     radial2 = lambda x,y: x**2+y**2
+#     mapx = lambda x,y: x * (1. + k[0] * radial2(x,y) + k[1] * (radial2(x,y) ** 2) + k[2] * (radial2(x,y) ** 3))
+#     mapy = lambda x,y: y * (1. + k[0] * radial2(x,y) + k[1] * (radial2(x,y) ** 2) + k[2] * (radial2(x,y) ** 3))
+
+#     x_axis = np.arange(input_image.shape[1])
+#     y_axis = np.arange(input_image.shape[0])
+#     XX, YY = np.meshgrid(x_axis, y_axis)
+#     mapx = np.vectorize(mapx)(XX, YY)
+#     mapy = np.vectorize(mapy)(XX, YY)
+#     return cv2.remap(input_image, mapx, mapy, cv2.INTER_LINEAR)
+
 update_lines()
 while(1):
     key = cv2.waitKey(33) & 0xFF
     if key == ord('\x20'):
-        k = minimize(cost, np.array([0.1] * 3), method='BFGS')
-        try:
-            print(cost(k), '@', k)
-        except KeyError as e:
-
-            print(e)
+        k = minimize(cost, [0,0,0], method='Nelder-Mead')
+        print(k)
+        # undistorted_image = undistort(k.x)
+        # cv2.imshow('undistorted_image', undistorted_image)
     elif key == ord('\x1B'):
         sys.exit()
 
-cv2.waitKey(0)
 sys.exit()

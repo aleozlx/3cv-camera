@@ -2,6 +2,7 @@ import os, sys
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt
+from scipy.optimize import minimize
 
 # input_image = cv2.imread('radial_distortion/rosten_2008_camera-figure-4-b.tiff')
 # input_image = cv2.resize(input_image, (853,640))
@@ -83,16 +84,22 @@ def update_lines():
             canny_edges_lines = cv2.circle(canny_edges_lines, point, 6, cmap_lines(li), -1)
     cv2.imshow('canny_deges', canny_edges_lines)
 
-def cost():
+# ======= Undistortion =======
+def cost(k):
+    print('cost', k)
     error = 0.0
     for line in lines:
         if len(line):
-            func_line = fit_int_line(np.array(line))
-            point1 = (line[0][0], func_line(line[0][0]))
-            point2 = (line[-1][0], func_line(line[-1][0]))
+            points = np.array(line)
+            radial2 = np.linalg.norm(points, axis=1) ** 2
+            undistortion = 1. + k[0] * radial2 + k[1] * (radial2 ** 2) + k[2] * (radial2 ** 3)
+            undistorted = points * undistortion[..., np.newaxis]
+            func_line = fit_int_line(np.array(undistorted))
+            point1 = (undistorted[0][0], func_line(undistorted[0][0]))
+            point2 = (undistorted[-1][0], func_line(undistorted[-1][0]))
             norm = np.array([point1[1]-point2[1], point2[0]-point1[0]]).astype(float)
             norm /= np.linalg.norm(norm).tolist()
-            distances = np.abs(np.dot(np.array(line) - np.array(line[0])[np.newaxis, ...], norm))
+            distances = np.abs(np.dot(np.array(undistorted) - np.array(undistorted[0])[np.newaxis, ...], norm))
             error += np.sum(distances**2)
     return error
 
@@ -100,7 +107,12 @@ update_lines()
 while(1):
     key = cv2.waitKey(33) & 0xFF
     if key == ord('\x20'):
-        print(cost())
+        k = minimize(cost, np.array([0.1] * 3), method='BFGS')
+        try:
+            print(cost(k), '@', k)
+        except KeyError as e:
+
+            print(e)
     elif key == ord('\x1B'):
         sys.exit()
 
